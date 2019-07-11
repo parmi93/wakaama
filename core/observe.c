@@ -915,7 +915,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)observationData->contextP->clientList, observationData->client);
     if (clientP == NULL)
     {
-        observationData->callback(observationData->client,
+        observationData->callback(contextP,
+                observationData->client,
                 &observationData->uri,
                 COAP_500_INTERNAL_SERVER_ERROR,  //?
                 0, NULL, 0,
@@ -946,7 +947,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
 
     if (code != COAP_205_CONTENT)
     {
-        observationData->callback(clientP->internalID,
+        observationData->callback(contextP,
+                clientP->internalID,
                 &observationData->uri,
                 code,
                 LWM2M_CONTENT_TEXT, NULL, 0,
@@ -966,7 +968,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
 
             // give the user chance to free previous observation userData
             // indicator: COAP_202_DELETED and (Length ==0)
-            observationP->callback(observationP->clientP->internalID,
+            observationP->callback(contextP,
+                    observationP->clientP->internalID,
                     &observationP->uri,
                     COAP_202_DELETED,
                     0, NULL, 0,
@@ -983,7 +986,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
 
         observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
 
-        observationData->callback(observationData->client,
+        observationData->callback(contextP,
+                observationData->client,
                 &observationData->uri,
                 0,
                 packet->content_type, packet->payload, packet->payload_len,
@@ -1008,7 +1012,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
 
     if (clientP == NULL)
     {
-        cancelP->callbackP(cancelP->client,
+        cancelP->callbackP(contextP,
+                cancelP->client,
                 &cancelP->uri,
                 COAP_500_INTERNAL_SERVER_ERROR,
                 packet->content_type, NULL, 0,
@@ -1029,7 +1034,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
 
     if (code != COAP_205_CONTENT)
     {
-        cancelP->callbackP(cancelP->client,
+        cancelP->callbackP(contextP,
+                cancelP->client,
                 &cancelP->uri,
                 code,
                 LWM2M_CONTENT_TEXT, NULL, 0,
@@ -1037,7 +1043,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
     }
     else
     {
-        cancelP->callbackP(cancelP->client,
+        cancelP->callbackP(contextP,
+                cancelP->client,
                 &cancelP->uri,
                 0,
                 packet->content_type, packet->payload, packet->payload_len,
@@ -1246,7 +1253,8 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
             coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
             message_send(contextP, response, fromSessionH);
         }
-        observationP->callback(clientID,
+        observationP->callback(contextP,
+                               clientID,
                                &observationP->uri,
                                (int)count,
                                message->content_type, message->payload, message->payload_len,

@@ -389,7 +389,8 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
 
     if (message == NULL)
     {
-        dataP->callback(dataP->clientID,
+        dataP->callback(contextP,
+                        dataP->clientID,
                         &dataP->uri,
                         COAP_503_SERVICE_UNAVAILABLE,
                         LWM2M_CONTENT_TEXT, NULL, 0,
@@ -436,7 +437,8 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
             lwm2m_free(locationString);
         }
 
-        dataP->callback(dataP->clientID,
+        dataP->callback(contextP,
+                        dataP->clientID,
                         &dataP->uri,
                         packet->code,
                         utils_convertMediaType(packet->content_type),
