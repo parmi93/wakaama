@@ -59,7 +59,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
 uint8_t object_checkReadable(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP,
                              lwm2m_attributes_t * attrP)
@@ -946,9 +945,7 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             if (isBootstrap)
             {
                 targetP->shortID = 0;
-#ifndef LWM2M_VERSION_1_0
                 targetP->servObjInstID = LWM2M_MAX_ID;
-#endif
 
                 lwm2m_data_free(size, dataP);
                 size = 1;
@@ -1019,9 +1016,7 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
                 }
                 else
                 {
-#ifndef LWM2M_VERSION_1_0
                     targetP->servObjInstID = serverInstP->id;
-#endif
                     if (0 != prv_getMandatoryInfo(contextP, serverObjP, serverInstP->id, targetP))
                     {
                         lwm2m_free(targetP);
