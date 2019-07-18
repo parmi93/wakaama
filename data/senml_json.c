@@ -95,8 +95,12 @@ static int prv_parseItem(const uint8_t * buffer,
     bool bvSeen = false;
     bool bverSeen = false;
 
-    memset(recordP->ids, 0xFF, 4*sizeof(uint16_t));
+    recordP->ids[0] = LWM2M_MAX_ID;
+    recordP->ids[1] = LWM2M_MAX_ID;
+    recordP->ids[2] = LWM2M_MAX_ID;
+    recordP->ids[3] = LWM2M_MAX_ID;
     memset(&recordP->value, 0, sizeof(recordP->value));
+    recordP->value.id = LWM2M_MAX_ID;
     recordP->time = 0;
 
     index = 0;
@@ -218,8 +222,8 @@ static int prv_parseItem(const uint8_t * buffer,
 
                 /* Check for " around URI */
                 if (valueLen < 2
-                        || buffer[index+valueStart] != '"'
-                                || buffer[index+valueStart+valueLen-1] != '"')
+                 || buffer[index+valueStart] != '"'
+                 || buffer[index+valueStart+valueLen-1] != '"')
                 {
                     return -1;
                 }
@@ -496,7 +500,10 @@ static bool prv_convertValue(const _record_t * recordP,
         }
         break;
     default:
-        targetP->type = recordP->value.type;
+        if (recordP->value.type != LWM2M_TYPE_UNDEFINED)
+        {
+            targetP->type = recordP->value.type;
+        }
         memcpy(&targetP->value, &recordP->value.value, sizeof(targetP->value));
         break;
     case LWM2M_TYPE_OBJECT:
@@ -537,7 +544,14 @@ static int prv_convertRecord(const _record_t * recordArray,
             targetP = rootP + freeIndex;
             freeIndex++;
             targetP->id = recordArray[index].ids[0];
-            targetP->type = LWM2M_TYPE_OBJECT;
+            if (targetP->id != LWM2M_MAX_ID)
+            {
+                targetP->type = LWM2M_TYPE_OBJECT;
+            }
+            else
+            {
+                targetP->type = LWM2M_TYPE_UNDEFINED;
+            }
         }
         if (recordArray[index].ids[1] != LWM2M_MAX_ID)
         {
@@ -1138,6 +1152,19 @@ int senml_json_serialize(const lwm2m_uri_t * uriP,
                                 PRV_JSON_BUFFER_SIZE - head);
         if (res < 0) return res;
         head += res;
+    }
+
+    if (!baseNameOutput && baseUriLen > 0)
+    {
+        if (head + baseUriLen + JSON_BN_HEADER_SIZE + 3 > PRV_JSON_BUFFER_SIZE) return -1;
+        bufferJSON[head++] = JSON_ITEM_BEGIN;
+        memcpy(bufferJSON + head, JSON_BN_HEADER, JSON_BN_HEADER_SIZE);
+        head += JSON_BN_HEADER_SIZE;
+        memcpy(bufferJSON + head, baseUriStr, baseUriLen);
+        head += baseUriLen;
+        bufferJSON[head++] = JSON_ITEM_STRING_END;
+        bufferJSON[head++] = JSON_ITEM_END;
+        baseNameOutput = true;
     }
 
     if (head + 1 > PRV_JSON_BUFFER_SIZE) return 0;

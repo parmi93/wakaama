@@ -178,6 +178,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_408_REQ_ENTITY_INCOMPLETE  (uint8_t)0x88
 #define COAP_412_PRECONDITION_FAILED    (uint8_t)0x8C
 #define COAP_413_ENTITY_TOO_LARGE       (uint8_t)0x8D
+#define COAP_415_UNSUPPORTED_CONTENT_FORMAT (uint8_t)0x8F
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 #define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
@@ -388,6 +389,8 @@ lwm2m_data_t * lwm2m_data_new(int size);
 int lwm2m_data_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
 int lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
+int lwm2m_data_append(int *sizeP, lwm2m_data_t **dataP, int addDataSize, lwm2m_data_t *addDataP);
+int lwm2m_data_append_one(int *sizeP, lwm2m_data_t **dataP, lwm2m_data_type_t type, uint16_t id);
 
 void lwm2m_data_encode_string(const char * string, lwm2m_data_t * dataP);
 void lwm2m_data_encode_nstring(const char * string, size_t length, lwm2m_data_t * dataP);
@@ -808,6 +811,9 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP, uint16_t clientID, lwm
 int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, int numData, lwm2m_data_t * dataP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+#ifndef LWM2M_VERSION_1_0
+int lwm2m_dm_read_composite(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * urisP, size_t numUris, lwm2m_result_callback_t callback, void * userData);
+#endif
 
 // Information Reporting APIs
 int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);

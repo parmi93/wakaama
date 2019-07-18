@@ -16,6 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -182,8 +183,15 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
 
     if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID)
     {
-        return COAP_404_NOT_FOUND;
+        return COAP_401_UNAUTHORIZED;
     }
+
+#ifndef LWM2M_VERSION_1_0
+    if (uriP->objectId == LWM2M_OSCORE_OBJECT_ID)
+    {
+        return COAP_401_UNAUTHORIZED;
+    }
+#endif
 
     if (serverP->status != STATE_REGISTERED
         && serverP->status != STATE_REG_UPDATE_NEEDED
@@ -365,6 +373,68 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
         }
         break;
 
+#ifndef LWM2M_VERSION_1_0
+        // TODO: Support SenML-CBOR also
+#ifdef LWM2M_SUPPORT_SENML_JSON
+    case COAP_FETCH:
+        {
+            uint8_t * buffer = NULL;
+            size_t length = 0;
+
+            if (LWM2M_URI_IS_SET_OBJECT(uriP))
+            {
+                // URIs are in the payload, not the headers
+                result = COAP_400_BAD_REQUEST;
+            }
+            else if (IS_OPTION(message, COAP_OPTION_OBSERVE))
+            {
+                // TODO: Handle Observe-Composite and Cancel Observe-Composite
+                result = COAP_400_BAD_REQUEST;
+            }
+            else if (IS_OPTION(message, COAP_OPTION_CONTENT_TYPE)
+                  && format == LWM2M_CONTENT_SENML_JSON)
+            {
+                result = NO_ERROR;
+                if (IS_OPTION(message, COAP_OPTION_ACCEPT))
+                {
+                    if (message->accept_num == 1
+                     && message->accept[0] == LWM2M_CONTENT_SENML_JSON)
+                    {
+                        result = COAP_400_BAD_REQUEST;
+                    }
+                }
+                if (result == NO_ERROR)
+                {
+                    result = object_readComposite(contextP,
+                                                  format,
+                                                  message->payload,
+                                                  message->payload_len,
+                                                  message->accept_num,
+                                                  message->accept,
+                                                  &format,
+                                                  &buffer,
+                                                  &length);
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            if (COAP_205_CONTENT == result)
+            {
+                coap_set_header_content_type(response, format);
+                coap_set_payload(response, buffer, length);
+                // lwm2m_handle_packet will free buffer
+            }
+            else
+            {
+                lwm2m_free(buffer);
+            }
+        }
+        break;
+#endif
+#endif
+
     default:
         result = COAP_400_BAD_REQUEST;
         break;
@@ -488,7 +558,14 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
             transaction_free(transaction);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
-        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        if (uriP != NULL)
+        {
+            memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        }
+        else
+        {
+            LWM2M_URI_RESET(&dataP->uri);
+        }
         dataP->clientID = clientP->internalID;
         dataP->callback = callback;
         dataP->userData = userData;
@@ -513,6 +590,7 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
     LOG_ARG("clientID: %d", clientID);
     LOG_URI(uriP);
 
+    if (!LWM2M_URI_IS_SET_OBJECT(uriP)) return COAP_400_BAD_REQUEST;
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
@@ -818,5 +896,245 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
 
     return transaction_send(contextP, transaction);
 }
+
+#ifndef LWM2M_VERSION_1_0
+int lwm2m_dm_read_composite(lwm2m_context_t * contextP,
+                            uint16_t clientID,
+                            lwm2m_uri_t * urisP,
+                            size_t numUris,
+                            lwm2m_result_callback_t callback,
+                            void * userData)
+{
+    size_t i;
+    lwm2m_client_t * clientP = NULL;
+    lwm2m_data_t *dataP = NULL;
+    int size = 0;
+
+    LOG_ARG("clientID: %d", clientID);
+    for(i = 0; i < numUris; i++)
+    {
+        LOG_URI(urisP + i);
+    }
+
+    clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(contextP->clientList, clientID);
+    if (clientP != NULL)
+    {
+        lwm2m_media_type_t format = clientP->format;
+        uint8_t *serialized;
+        lwm2m_uri_t uri;
+
+        // Construct data.
+        // LWM2M_TYPE_UNDEFINED is used to indicate a terminal level. Anything
+        // below that will not be added as it will be read by reading the entire
+        // object, instance, or resource. It is also used as a placeholder in
+        // resources and resource instances because we want no values here.
+        for(i = 0; i < numUris; i++)
+        {
+            if (!LWM2M_URI_IS_SET_OBJECT(urisP + i))
+            {
+                // Reading everything
+                lwm2m_data_free(size, dataP);
+                dataP = NULL;
+                size = 0;
+                break;
+            }
+            else
+            {
+                int j;
+                lwm2m_data_t *parentP = NULL;
+                for (j = 0; j < size; j++)
+                {
+                    if (dataP[j].id == urisP[i].objectId)
+                    {
+                        parentP = dataP + j;
+                    }
+                }
+                if (j == size)
+                {
+                    if (0 == lwm2m_data_append_one(&size, &dataP, LWM2M_TYPE_UNDEFINED, urisP[i].objectId))
+                    {
+                        goto error;
+                    }
+
+                    parentP = dataP + size - 1;
+                    if (LWM2M_URI_IS_SET_INSTANCE(urisP + i))
+                    {
+                        parentP->type = LWM2M_TYPE_OBJECT;
+                    }
+                }
+
+                if (LWM2M_URI_IS_SET_INSTANCE(urisP + i)
+                 && parentP->type != LWM2M_TYPE_UNDEFINED)
+                {
+                    int count = parentP->value.asChildren.count;
+                    for (j = 0; j < count; j++)
+                    {
+                        if (parentP->value.asChildren.array[j].id == urisP[i].instanceId)
+                        {
+                            parentP = parentP->value.asChildren.array + j;
+                        }
+                    }
+                    if (j == count)
+                    {
+                        if (0 == lwm2m_data_append_one(&count,
+                                                       &parentP->value.asChildren.array,
+                                                       LWM2M_TYPE_UNDEFINED,
+                                                       urisP[i].instanceId))
+                        {
+                            goto error;
+                        }
+
+                        parentP->value.asChildren.count = count;
+                        parentP = parentP->value.asChildren.array + parentP->value.asChildren.count - 1;
+                        if (LWM2M_URI_IS_SET_RESOURCE(urisP + i))
+                        {
+                            parentP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+                        }
+                    }
+
+                    if (LWM2M_URI_IS_SET_RESOURCE(urisP + i)
+                     && parentP->type != LWM2M_TYPE_UNDEFINED)
+                    {
+                        int count = parentP->value.asChildren.count;
+                        for (j = 0; j < count; j++)
+                        {
+                            if (parentP->value.asChildren.array[j].id == urisP[i].resourceId)
+                            {
+                                parentP = parentP->value.asChildren.array + j;
+                            }
+                        }
+                        if (j == count)
+                        {
+                            if (0 == lwm2m_data_append_one(&count,
+                                                           &parentP->value.asChildren.array,
+                                                           LWM2M_TYPE_UNDEFINED,
+                                                           urisP[i].resourceId))
+                            {
+                                goto error;
+                            }
+
+                            parentP->value.asChildren.count = count;
+                            parentP = parentP->value.asChildren.array + parentP->value.asChildren.count - 1;
+                            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(urisP + i))
+                            {
+                                parentP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+                            }
+                        }
+
+                        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(urisP + i)
+                         && parentP->type != LWM2M_TYPE_UNDEFINED)
+                        {
+                            int count = parentP->value.asChildren.count;
+
+                            for (j = 0; j < count; j++)
+                            {
+                                if (parentP->value.asChildren.array[j].id == urisP[i].resourceInstanceId)
+                                {
+                                    break;
+                                }
+                            }
+                            if (j == count)
+                            {
+                                if (0 == lwm2m_data_append_one(&count,
+                                                               &parentP->value.asChildren.array,
+                                                               LWM2M_TYPE_UNDEFINED,
+                                                               urisP[i].resourceInstanceId))
+                                {
+                                    goto error;
+                                }
+
+                                parentP->value.asChildren.count = count;
+                            }
+                        }
+                        else
+                        {
+                            // Reading whole resource
+                            lwm2m_data_free(parentP->value.asChildren.count,
+                                            parentP->value.asChildren.array);
+                            parentP->value.asChildren.count = 0;
+                            parentP->value.asChildren.array = NULL;
+                            parentP->type = LWM2M_TYPE_UNDEFINED;
+                        }
+                    }
+                    else
+                    {
+                        // Reading whole object instance
+                        lwm2m_data_free(parentP->value.asChildren.count,
+                                        parentP->value.asChildren.array);
+                        parentP->value.asChildren.count = 0;
+                        parentP->value.asChildren.array = NULL;
+                        parentP->type = LWM2M_TYPE_UNDEFINED;
+                    }
+                }
+                else
+                {
+                    // Reading whole object
+                    lwm2m_data_free(parentP->value.asChildren.count,
+                                    parentP->value.asChildren.array);
+                    parentP->value.asChildren.count = 0;
+                    parentP->value.asChildren.array = NULL;
+                    parentP->type = LWM2M_TYPE_UNDEFINED;
+                }
+            }
+        }
+
+        // Replace undefined types with good types for objects and instances.
+        // Serialization may not be correct without them.
+        for (i = 0; i < size; i++)
+        {
+            if (dataP[i].type == LWM2M_TYPE_UNDEFINED
+             && dataP[i].id != LWM2M_MAX_ID)
+            {
+                dataP[i].type = LWM2M_TYPE_OBJECT;
+            }
+            if (dataP[i].value.asChildren.count > 0)
+            {
+                size_t j;
+                for (j=0; j < dataP[i].value.asChildren.count; j++)
+                {
+                    if (dataP[i].value.asChildren.array[j].type == LWM2M_TYPE_UNDEFINED
+                     && dataP[i].value.asChildren.array[j].id != LWM2M_MAX_ID)
+                    {
+                        dataP[i].value.asChildren.array[j].type = LWM2M_TYPE_OBJECT_INSTANCE;
+                    }
+                }
+            }
+        }
+
+        // Serialize
+        LWM2M_URI_RESET(&uri);
+        if (size == 1)
+        {
+            uri.objectId = dataP->id;
+            if (dataP->value.asChildren.count == 1)
+            {
+                uri.instanceId = dataP->value.asChildren.array->id;
+            }
+        }
+        int length = lwm2m_data_serialize(&uri,
+                                          size,
+                                          dataP,
+                                          &format,
+                                          &serialized);
+        lwm2m_data_free(size, dataP);
+
+        if (length > 0)
+        {
+            return prv_makeOperation(contextP, clientID, NULL,
+                                     COAP_FETCH,
+                                     format, serialized, length,
+                                     callback, userData);
+        }
+        else
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+    }
+
+error:
+    lwm2m_data_free(size, dataP);
+    return COAP_400_BAD_REQUEST;
+}
+#endif
 
 #endif

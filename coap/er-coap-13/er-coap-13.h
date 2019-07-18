@@ -36,6 +36,7 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  * \contributors
  *    David Navarro, Intel Corporation - Adapt to usage in liblwm2m
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  */
 
 
@@ -118,7 +119,10 @@ typedef enum {
   COAP_GET = 1,
   COAP_POST,
   COAP_PUT,
-  COAP_DELETE
+  COAP_DELETE,
+  COAP_FETCH,
+  COAP_PATCH,
+  COAP_IPATCH
 } coap_method_t;
 
 /* CoAP response codes */

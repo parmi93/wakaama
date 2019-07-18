@@ -19,6 +19,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -207,7 +208,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         LOG_ARG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d",
                 message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid, message->content_type);
         LOG_ARG("Payload: %.*s", message->payload_len, message->payload);
-        if (message->code >= COAP_GET && message->code <= COAP_DELETE)
+        if (message->code >= COAP_GET && message->code <= COAP_IPATCH)
         {
             uint32_t block_num = 0;
             uint16_t block_size = REST_MAX_CHUNK_SIZE;

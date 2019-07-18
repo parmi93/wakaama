@@ -234,7 +234,10 @@ static int prv_read_id(char * buffer,
 
 static void prv_printUri(const lwm2m_uri_t * uriP)
 {
-    fprintf(stdout, "/%d", uriP->objectId);
+    if (LWM2M_URI_IS_SET_OBJECT(uriP))
+        fprintf(stdout, "/%d", uriP->objectId);
+    else if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+        fprintf(stdout, "/");
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         fprintf(stdout, "/%d", uriP->instanceId);
     else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -335,6 +338,73 @@ static void prv_read_client(lwm2m_context_t * lwm2mH,
 syntax_error:
     fprintf(stdout, "Syntax error !");
 }
+
+#ifndef LWM2M_VERSION_1_0
+static void prv_readc_client(lwm2m_context_t * lwm2mH,
+                             char * buffer,
+                             void * user_data)
+{
+    uint16_t clientId;
+    lwm2m_uri_t uri;
+    lwm2m_uri_t* uris = NULL;
+    size_t uriCount = 0;
+    char* tmp;
+    char* end = NULL;
+    int result;
+
+    /* unused parameters */
+    (void)user_data;
+
+    result = prv_read_id(buffer, &clientId);
+    if (result != 1) goto syntax_error;
+
+    tmp = buffer;
+    do
+    {
+        tmp = get_next_arg(tmp, &end);
+        if (tmp[0] == 0) goto syntax_error;
+
+        result = lwm2m_stringToUri(tmp, end - tmp, &uri);
+        if (result == 0) goto syntax_error;
+        uriCount++;
+    } while (!check_end_of_args(end));
+
+    uris = lwm2m_malloc(uriCount * sizeof(lwm2m_uri_t));
+    if (uris != NULL)
+    {
+        size_t i;
+        for(i = 0; i < uriCount; i++)
+        {
+            buffer = get_next_arg(buffer, &end);
+            if (buffer[0] == 0) goto syntax_error;
+
+            result = lwm2m_stringToUri(buffer, end - buffer, uris + i);
+            if (result == 0) goto syntax_error;
+        }
+
+        result = lwm2m_dm_read_composite(lwm2mH, clientId, uris, uriCount, prv_result_callback, NULL);
+        lwm2m_free(uris);
+    }
+    else
+    {
+        result = COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    if (result == 0)
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        prv_print_error(result);
+    }
+    return;
+
+syntax_error:
+    lwm2m_free(uris);
+    fprintf(stdout, "Syntax error !");
+}
+#endif
 
 static void prv_discover_client(lwm2m_context_t * lwm2mH,
                                 char * buffer,
@@ -1050,6 +1120,12 @@ int main(int argc, char *argv[])
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to read such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
                                             "Result will be displayed asynchronously.", prv_read_client, NULL},
+#ifndef LWM2M_VERSION_1_0
+            {"readc", "Read-Composite from a client.", " read CLIENT# URI [URI...]\r\n"
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to read such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
+                                            "Result will be displayed asynchronously.", prv_readc_client, NULL},
+#endif
             {"disc", "Discover resources of a client.", " disc CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to discover such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
