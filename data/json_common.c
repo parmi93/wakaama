@@ -528,19 +528,22 @@ int json_dataStrip(int size, lwm2m_data_t * dataP, lwm2m_data_t ** resultP)
         case LWM2M_TYPE_OBJECT_INSTANCE:
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
         {
-            int childLen;
+            if (dataP[i].value.asChildren.count != 0)
+            {
+                int childLen;
 
-            childLen = json_dataStrip(dataP[i].value.asChildren.count,
-                                      dataP[i].value.asChildren.array,
-                                      &((*resultP)[j].value.asChildren.array));
-            if (childLen <= 0)
-            {
-                /* skip this one */
-                j--;
-            }
-            else
-            {
-                (*resultP)[j].value.asChildren.count = childLen;
+                childLen = json_dataStrip(dataP[i].value.asChildren.count,
+                                          dataP[i].value.asChildren.array,
+                                          &((*resultP)[j].value.asChildren.array));
+                if (childLen <= 0)
+                {
+                    /* skip this one */
+                    j--;
+                }
+                else
+                {
+                    (*resultP)[j].value.asChildren.count = childLen;
+                }
             }
             break;
         }

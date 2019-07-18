@@ -969,49 +969,93 @@ static int prv_serializeData(const lwm2m_data_t * tlvP,
     case LWM2M_TYPE_OBJECT:
     case LWM2M_TYPE_OBJECT_INSTANCE:
     {
-        uint8_t uriStr[URI_MAX_STRING_LEN];
-        size_t uriLen;
-        size_t index;
-
-        if (parentUriLen > 0)
+        if (tlvP->value.asChildren.count == 0)
         {
-            if (URI_MAX_STRING_LEN < parentUriLen) return -1;
-            memcpy(uriStr, parentUriStr, parentUriLen);
-            uriLen = parentUriLen;
+            if (bufferLen < 1) return -1;
+            buffer[head++] = JSON_ITEM_BEGIN;
+
+            if (!*baseNameOutput && baseUriLen > 0)
+            {
+                if (bufferLen - head < baseUriLen + JSON_BN_HEADER_SIZE + 2) return -1;
+                memcpy(buffer + head, JSON_BN_HEADER, JSON_BN_HEADER_SIZE);
+                head += JSON_BN_HEADER_SIZE;
+                memcpy(buffer + head, baseUriStr, baseUriLen);
+                head += baseUriLen;
+                buffer[head++] = JSON_ITEM_STRING_END;
+                buffer[head++] = JSON_SEPARATOR;
+                *baseNameOutput = true;
+            }
+
+            if (!baseUriLen || level > baseLevel)
+            {
+                if (bufferLen - head < JSON_ITEM_URI_SIZE) return -1;
+                memcpy(buffer + head, JSON_ITEM_URI, JSON_ITEM_URI_SIZE);
+                head += JSON_ITEM_URI_SIZE;
+
+                if (parentUriLen > 0)
+                {
+                    if (bufferLen - head < parentUriLen) return -1;
+                    memcpy(buffer + head, parentUriStr, parentUriLen);
+                    head += parentUriLen;
+                }
+
+                res = utils_intToText(tlvP->id, buffer + head, bufferLen - head);
+                if (res <= 0) return -1;
+                head += res;
+
+                if (bufferLen - head < 2) return -1;
+                buffer[head++] = JSON_ITEM_URI_END;
+            }
+
+            if (bufferLen - head < 1) return -1;
+            buffer[head++] = JSON_ITEM_END;
         }
         else
         {
-            uriLen = 0;
-        }
-        res = utils_intToText(tlvP->id,
-                              uriStr + uriLen,
-                              URI_MAX_STRING_LEN - uriLen);
-        if (res <= 0) return -1;
-        uriLen += res;
-        uriStr[uriLen] = '/';
-        uriLen++;
+            uint8_t uriStr[URI_MAX_STRING_LEN];
+            size_t uriLen;
+            size_t index;
 
-        head = 0;
-        for (index = 0 ; index < tlvP->value.asChildren.count; index++)
-        {
-            if (index != 0)
+            if (parentUriLen > 0)
             {
-                if (head + 1 > bufferLen) return 0;
-                buffer[head++] = JSON_SEPARATOR;
+                if (URI_MAX_STRING_LEN < parentUriLen) return -1;
+                memcpy(uriStr, parentUriStr, parentUriLen);
+                uriLen = parentUriLen;
             }
+            else
+            {
+                uriLen = 0;
+            }
+            res = utils_intToText(tlvP->id,
+                                  uriStr + uriLen,
+                                  URI_MAX_STRING_LEN - uriLen);
+            if (res <= 0) return -1;
+            uriLen += res;
+            uriStr[uriLen] = '/';
+            uriLen++;
 
-            res = prv_serializeData(tlvP->value.asChildren.array + index,
-                                    baseUriStr,
-                                    baseUriLen,
-                                    baseLevel,
-                                    uriStr,
-                                    uriLen,
-                                    level,
-                                    baseNameOutput,
-                                    buffer + head,
-                                    bufferLen - head);
-            if (res < 0) return -1;
-            head += res;
+            head = 0;
+            for (index = 0 ; index < tlvP->value.asChildren.count; index++)
+            {
+                if (index != 0)
+                {
+                    if (head + 1 > bufferLen) return 0;
+                    buffer[head++] = JSON_SEPARATOR;
+                }
+
+                res = prv_serializeData(tlvP->value.asChildren.array + index,
+                                        baseUriStr,
+                                        baseUriLen,
+                                        baseLevel,
+                                        uriStr,
+                                        uriLen,
+                                        level,
+                                        baseNameOutput,
+                                        buffer + head,
+                                        bufferLen - head);
+                if (res < 0) return -1;
+                head += res;
+            }
         }
     }
     break;
