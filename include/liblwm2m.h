@@ -782,6 +782,13 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
+#ifndef LWM2M_VERSION_1_0
+// send resources specified by URIs to the server specified by the server short
+// identifier or all if the ID is 0. NO_ERROR is returned if sending to any
+// server is successful.
+int lwm2m_send(lwm2m_context_t * contextP, uint16_t shortServerID, lwm2m_uri_t * urisP, size_t numUris, lwm2m_transaction_callback_t callback, void * userData);
+#endif
+
 // Deregister from a server for a period of time
 int lwm2m_registration_disable(lwm2m_context_t * contextP,
                                uint16_t shortServerID,
@@ -795,11 +802,13 @@ int lwm2m_initiate_bootstrap(lwm2m_context_t * contextP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE
-// Clients registration/deregistration monitoring API.
+// Clients registration/deregistration and send monitoring API.
 // When a LWM2M client registers, the callback is called with status COAP_201_CREATED.
 // When a LWM2M client deregisters, the callback is called with status COAP_202_DELETED.
+// When a LWM2M client sends resources, the callback is called with status COAP_205_CONTENT and the data and dataLength are set.
 // clientID is the internal ID of the LWM2M Client.
-// The callback's parameters uri, data, dataLength are always NULL.
+// The callback's parameter uri is always NULL.
+// The callback's parameters uri, data, dataLength are always NULL for registration/deregistration.
 // The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration, it deleted when the callback returns.
 void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_callback_t callback, void * userData);
 

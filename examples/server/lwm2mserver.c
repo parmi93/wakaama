@@ -1064,6 +1064,13 @@ static void prv_monitor_callback(lwm2m_context_t *lwm2mH,
         prv_dump_client(targetP);
         break;
 
+#ifndef LWM2M_VERSION_1_0
+    case COAP_205_CONTENT:
+        fprintf(stdout, "\r\nClient #%d send.\r\n", clientID);
+        output_data(stdout, format, data, dataLength, 1);
+        break;
+#endif
+
     default:
         fprintf(stdout, "\r\nMonitor callback called with an unknown status: %d.\r\n", status);
         break;
