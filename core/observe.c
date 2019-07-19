@@ -852,7 +852,6 @@ typedef struct
     lwm2m_uri_t             uri;
     lwm2m_result_callback_t callbackP;
     void *                  userDataP;
-    lwm2m_context_t *       contextP;
 } cancellation_data_t;
 
 typedef struct
@@ -862,7 +861,6 @@ typedef struct
     lwm2m_uri_t             uri;
     lwm2m_result_callback_t callback;
     void *                  userData;
-    lwm2m_context_t *       contextP;
 } observation_data_t;
 
 
@@ -910,9 +908,7 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
     lwm2m_client_t * clientP;
     lwm2m_uri_t * uriP = & observationData->uri;
 
-    (void)contextP; /* unused */
-
-    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)observationData->contextP->clientList, observationData->client);
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, observationData->client);
     if (clientP == NULL)
     {
         observationData->callback(contextP,
@@ -1006,9 +1002,7 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
     cancellation_data_t * cancelP = (cancellation_data_t *)transacP->userData;
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
-    lwm2m_client_t * clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)cancelP->contextP->clientList, cancelP->client);
-
-    (void)contextP; /* unused */
+    lwm2m_client_t * clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, cancelP->client);
 
     if (clientP == NULL)
     {
@@ -1099,7 +1093,6 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     observationData->client = clientP->internalID;
     observationData->callback = callback;
     observationData->userData = userData;
-    observationData->contextP = contextP;
 
     token[0] = clientP->internalID >> 8;
     token[1] = clientP->internalID & 0xFF;
@@ -1184,7 +1177,6 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
         memcpy(&cancelP->uri, uriP, sizeof(lwm2m_uri_t));
         cancelP->callbackP = callback;
         cancelP->userDataP = userData;
-        cancelP->contextP = contextP;
 
         transactionP->callback = prv_obsCancelRequestCallback;
         transactionP->userData = (void *)cancelP;
