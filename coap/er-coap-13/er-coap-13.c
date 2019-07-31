@@ -621,6 +621,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
   uint32_t option_delta = 0;
   uint32_t option_length = 0;
   uint32_t *x;
+  uint16_t accept;
 
   /* Initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));
@@ -738,11 +739,59 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         ); /*FIXME always prints 8 bytes */
         break;
       case COAP_OPTION_ACCEPT:
+        accept = coap_parse_int_option(current_option, option_length);
         if (coap_pkt->accept_num < COAP_MAX_ACCEPT_NUM)
         {
-          coap_pkt->accept[coap_pkt->accept_num] = coap_parse_int_option(current_option, option_length);
+          coap_pkt->accept[coap_pkt->accept_num] = accept;
           coap_pkt->accept_num += 1;
-          PRINTF("Accept [%u]\n", coap_pkt->content_type);
+          PRINTF("Accept [%u]\n", accept);
+        }
+        else
+        {
+            // Look for one we don't support to replace, preserving order
+            int i;
+            for (i = 0; i < COAP_MAX_ACCEPT_NUM; i++)
+            {
+                switch (accept)
+                {
+                case TEXT_PLAIN:
+                case APPLICATION_LINK_FORMAT:
+                case APPLICATION_OCTET_STREAM:
+#ifdef LWM2M_SUPPORT_TLV
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+                case APPLICATION_LWM2M_TLV_OLD:
+#endif
+                case APPLICATION_LWM2M_TLV:
+#endif
+#ifdef LWM2M_SUPPORT_JSON
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+                case APPLICATION_LWM2M_JSON_OLD:
+#endif
+                case APPLICATION_LWM2M_JSON:
+#endif
+#ifdef LWM2M_SUPPORT_SENML_JSON
+                case APPLICATION_SENML_JSON:
+#endif
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#ifndef LWM2M_VERSION_1_1
+                case APPLICATION_CBOR:
+#endif
+                case APPLICATION_SENML_CBOR:
+#endif
+                    break;
+                default:
+                    if (i < COAP_MAX_ACCEPT_NUM - 1)
+                    {
+                        memmove(&coap_pkt->accept[i],
+                                &coap_pkt->accept[i + 1],
+                                (COAP_MAX_ACCEPT_NUM - 1 - i) * sizeof(coap_pkt->accept[i]));
+                    }
+                    coap_pkt->accept[COAP_MAX_ACCEPT_NUM - 1] = accept;
+                    PRINTF("Accept [%u]\n", accept);
+                    i = COAP_MAX_ACCEPT_NUM;
+                    break;
+                }
+            }
         }
         break;
       case COAP_OPTION_IF_MATCH:

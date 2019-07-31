@@ -837,12 +837,12 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 
 #ifdef LWM2M_SUPPORT_TLV
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
-            case LWM2M_CONTENT_TLV_OLD:
+            case APPLICATION_LWM2M_TLV_OLD:
                 *format = LWM2M_CONTENT_TLV_OLD;
                 found = true;
                 break;
 #endif
-            case LWM2M_CONTENT_TLV:
+            case APPLICATION_LWM2M_TLV:
                 *format = LWM2M_CONTENT_TLV;
                 found = true;
                 break;
@@ -850,19 +850,19 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 
 #ifdef LWM2M_SUPPORT_JSON
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
-            case LWM2M_CONTENT_JSON_OLD:
+            case APPLICATION_LWM2M_JSON_OLD:
                 *format = LWM2M_CONTENT_JSON_OLD;
                 found = true;
                 break;
 #endif
-            case LWM2M_CONTENT_JSON:
+            case APPLICATION_LWM2M_JSON:
                 *format = LWM2M_CONTENT_JSON;
                 found = true;
                 break;
 #endif
 
 #ifdef LWM2M_SUPPORT_SENML_JSON
-            case LWM2M_CONTENT_SENML_JSON:
+            case APPLICATION_SENML_JSON:
                 *format = LWM2M_CONTENT_SENML_JSON;
                 found = true;
                 break;
@@ -870,7 +870,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
 #ifndef LWM2M_VERSION_1_1
-            case LWM2M_CONTENT_CBOR:
+            case APPLICATION_CBOR:
                 if (singular)
                 {
                     *format = LWM2M_CONTENT_CBOR;
@@ -878,7 +878,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
                 }
                 break;
 #endif
-            case LWM2M_CONTENT_SENML_CBOR:
+            case APPLICATION_SENML_CBOR:
                 *format = LWM2M_CONTENT_SENML_CBOR;
                 found = true;
                 break;

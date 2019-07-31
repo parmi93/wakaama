@@ -68,7 +68,7 @@
 #define COAP_HEADER_LEN                      4 /* | version:0x03 type:0x0C tkl:0xF0 | code | mid:0x00FF | mid:0xFF00 | */
 #define COAP_ETAG_LEN                        8 /* The maximum number of bytes for the ETag */
 #define COAP_TOKEN_LEN                       8 /* The maximum number of bytes for the Token */
-#define COAP_MAX_ACCEPT_NUM                  2 /* The maximum number of accept preferences to parse/store */
+#define COAP_MAX_ACCEPT_NUM                  4 /* The maximum number of accept preferences to parse/store */
 
 #define COAP_MAX_OPTION_HEADER_LEN           5
 
@@ -209,6 +209,13 @@ typedef enum {
   APPLICATION_SOAP_FASTINFOSET = 49,
   APPLICATION_JSON = 50,
   APPLICATION_X_OBIX_BINARY = 51,
+  APPLICATION_CBOR = 60,
+  APPLICATION_SENML_JSON = 110,
+  APPLICATION_SENML_CBOR = 112,
+  APPLICATION_LWM2M_TLV_OLD = 1542,
+  APPLICATION_LWM2M_JSON_OLD = 1543,
+  APPLICATION_LWM2M_TLV = 11542,
+  APPLICATION_LWM2M_JSON = 11543,
   CONTENT_MAX_VALUE = 0xFFFF
 } coap_content_type_t;
 
