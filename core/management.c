@@ -386,11 +386,6 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                 // URIs are in the payload, not the headers
                 result = COAP_400_BAD_REQUEST;
             }
-            else if (IS_OPTION(message, COAP_OPTION_OBSERVE))
-            {
-                // TODO: Handle Observe-Composite and Cancel Observe-Composite
-                result = COAP_400_BAD_REQUEST;
-            }
             else if (IS_OPTION(message, COAP_OPTION_CONTENT_TYPE)
                   && format == LWM2M_CONTENT_SENML_JSON)
             {
@@ -405,6 +400,8 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                 }
                 if (result == NO_ERROR)
                 {
+                    // TODO: Handle Observe-Composite and Cancel Observe-Composite
+
                     result = object_readComposite(contextP,
                                                   format,
                                                   message->payload,

@@ -1675,6 +1675,11 @@ uint8_t object_readComposite(lwm2m_context_t * contextP,
                                              dataP,
                                              outFormatP);
         }
+        else
+        {
+            *outFormatP = inFormat;
+        }
+
         if (result == COAP_205_CONTENT)
         {
             int res;
