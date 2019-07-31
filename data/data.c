@@ -711,6 +711,15 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         return senml_json_parse(uriP, buffer, bufferLen, dataP);
 #endif
 
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#if !defined(LWM2M_VERSION_1_1)
+    case LWM2M_CONTENT_CBOR:
+        return cbor_parse(uriP, buffer, bufferLen, dataP);
+#endif
+    case LWM2M_CONTENT_SENML_CBOR:
+        return senml_cbor_parse(uriP, buffer, bufferLen, dataP);
+#endif
+
     default:
         return 0;
     }
@@ -727,7 +736,8 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
     // Check format
     if (*formatP == LWM2M_CONTENT_TEXT
-     || *formatP == LWM2M_CONTENT_OPAQUE)
+     || *formatP == LWM2M_CONTENT_OPAQUE
+     || *formatP == LWM2M_CONTENT_CBOR)
     {
         if (size != 1
          || (uriP != NULL && !LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -735,7 +745,9 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
          || dataP->type == LWM2M_TYPE_OBJECT_INSTANCE
          || dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-#ifdef LWM2M_SUPPORT_SENML_JSON
+#if defined(LWM2M_SUPPORT_SENML_CBOR)
+            *formatP = LWM2M_CONTENT_SENML_CBOR;
+#elif defined(LWM2M_SUPPORT_SENML_JSON)
             *formatP = LWM2M_CONTENT_SENML_JSON;
 #elif defined(LWM2M_SUPPORT_JSON)
             *formatP = LWM2M_CONTENT_JSON;
@@ -811,6 +823,15 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 #ifdef LWM2M_SUPPORT_SENML_JSON
     case LWM2M_CONTENT_SENML_JSON:
         return senml_json_serialize(uriP, size, dataP, bufferP);
+#endif
+
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#ifndef LWM2M_VERSION_1_1
+    case LWM2M_CONTENT_CBOR:
+        return cbor_serialize(uriP, size, dataP, bufferP);
+#endif
+    case LWM2M_CONTENT_SENML_CBOR:
+        return senml_cbor_serialize(uriP, size, dataP, bufferP);
 #endif
 
     default:

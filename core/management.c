@@ -374,8 +374,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
         break;
 
 #ifndef LWM2M_VERSION_1_0
-        // TODO: Support SenML-CBOR also
-#ifdef LWM2M_SUPPORT_SENML_JSON
+#if defined(LWM2M_SUPPORT_SENML_CBOR) || defined(LWM2M_SUPPORT_SENML_JSON)
     case COAP_FETCH:
         {
             uint8_t * buffer = NULL;
@@ -387,17 +386,53 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                 result = COAP_400_BAD_REQUEST;
             }
             else if (IS_OPTION(message, COAP_OPTION_CONTENT_TYPE)
-                  && format == LWM2M_CONTENT_SENML_JSON)
+                  && (0
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+                   || format == LWM2M_CONTENT_SENML_CBOR
+#endif
+#ifdef LWM2M_SUPPORT_SENML_JSON
+                   || format == LWM2M_CONTENT_SENML_JSON
+#endif
+                     ))
             {
                 result = NO_ERROR;
                 if (IS_OPTION(message, COAP_OPTION_ACCEPT))
                 {
-                    if (message->accept_num == 1
-                     && message->accept[0] == LWM2M_CONTENT_SENML_JSON)
+                    if (message->accept_num > 0)
                     {
-                        result = COAP_400_BAD_REQUEST;
+                        // Restrict accept to allowed response formats
+                        int i;
+                        for (i = 0; i < message->accept_num; i++)
+                        {
+                            switch (message->accept[i])
+                            {
+                            default:
+                                if (i + 1 < message->accept_num)
+                                {
+                                    memmove(message->accept + i,
+                                            message->accept + i + 1,
+                                            message->accept_num - i - 1);
+                                }
+                                message->accept_num -= 1;
+                                i--;
+                                break;
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+                            case LWM2M_CONTENT_SENML_CBOR:
+                                break;
+#endif
+#ifdef LWM2M_SUPPORT_SENML_JSON
+                            case LWM2M_CONTENT_SENML_JSON:
+                                break;
+#endif
+                            }
+                        }
+                        if (message->accept_num == 0)
+                        {
+                            result = COAP_400_BAD_REQUEST;
+                        }
                     }
                 }
+
                 if (result == NO_ERROR)
                 {
                     // TODO: Handle Observe-Composite and Cancel Observe-Composite
@@ -536,11 +571,11 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     transaction = transaction_new(clientP->sessionH, method, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    if (method == COAP_GET)
+    if (method == COAP_GET || method == COAP_FETCH)
     {
         coap_set_header_accept(transaction->message, format);
     }
-    else if (buffer != NULL)
+    if (buffer != NULL)
     {
         coap_set_header_content_type(transaction->message, format);
         // TODO: Take care of fragmentation
@@ -919,6 +954,12 @@ int lwm2m_dm_read_composite(lwm2m_context_t * contextP,
         lwm2m_media_type_t format = clientP->format;
         uint8_t *serialized;
         lwm2m_uri_t uri;
+
+        if (format != LWM2M_CONTENT_SENML_CBOR
+         && format != LWM2M_CONTENT_SENML_JSON)
+        {
+            goto error;
+        }
 
         // Construct data.
         // LWM2M_TYPE_UNDEFINED is used to indicate a terminal level. Anything

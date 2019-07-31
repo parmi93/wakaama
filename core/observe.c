@@ -850,12 +850,15 @@ int lwm2m_send(lwm2m_context_t * contextP,
         lwm2m_transaction_callback_t callback,
         void * userData)
 {
-    // TODO: Support SENML-CBOR also
-#ifdef LWM2M_SUPPORT_SENML_JSON
+#if defined(LWM2M_SUPPORT_SENML_CBOR) || defined(LWM2M_SUPPORT_SENML_JSON)
     lwm2m_transaction_t * transactionP;
     lwm2m_server_t * targetP;
     lwm2m_data_t * dataP = NULL;
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+    lwm2m_media_type_t format = LWM2M_CONTENT_SENML_CBOR;
+#else
     lwm2m_media_type_t format = LWM2M_CONTENT_SENML_JSON;
+#endif
     lwm2m_uri_t uri;
     int ret;
     int size = 0;

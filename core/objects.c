@@ -1588,7 +1588,9 @@ uint8_t object_readComposite(lwm2m_context_t * contextP,
 #ifdef LWM2M_SUPPORT_SENML_JSON
     case LWM2M_CONTENT_SENML_JSON:
 #endif
-        // TODO: Support SenML-CBOR
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+    case LWM2M_CONTENT_SENML_CBOR:
+#endif
         break;
     }
 

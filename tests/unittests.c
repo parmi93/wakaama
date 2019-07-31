@@ -77,6 +77,16 @@ int main()
        goto exit;
 #endif
 
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#ifndef LWM2M_VERSION_1_1
+   if (CUE_SUCCESS != create_cbor_suit())
+       goto exit;
+#endif
+
+   if (CUE_SUCCESS != create_senml_cbor_suit())
+       goto exit;
+#endif
+
    CU_basic_set_mode(CU_BRM_VERBOSE);
    CU_basic_run_tests();
 exit:
