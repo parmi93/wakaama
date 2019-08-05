@@ -68,7 +68,7 @@ static size_t prv_encodeFloat(double data,
 static size_t prv_encodeInt(int64_t data,
                             uint8_t * data_buffer)
 {
-    size_t length = 0;
+    size_t length;
 
     if (data >= INT8_MIN && data <= INT8_MAX)
     {
@@ -92,7 +92,7 @@ static size_t prv_encodeInt(int64_t data,
         length = 4;
         utils_copyValue(data_buffer, &value, length);
     }
-    else if (data >= INT64_MIN && data <= INT64_MAX)
+    else
     {
         length = 8;
         utils_copyValue(data_buffer, &data, length);
@@ -128,7 +128,7 @@ static size_t prv_encodeUInt(uint64_t data,
         length = 4;
         utils_copyValue(data_buffer, &value, length);
     }
-    else if (data <= UINT64_MAX)
+    else
     {
         length = 8;
         utils_copyValue(data_buffer, &data, length);

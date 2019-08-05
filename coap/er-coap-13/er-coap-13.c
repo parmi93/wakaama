@@ -631,7 +631,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
   /* parse header fields */
   coap_pkt->version = (COAP_HEADER_VERSION_MASK & coap_pkt->buffer[0])>>COAP_HEADER_VERSION_POSITION;
-  coap_pkt->type = (COAP_HEADER_TYPE_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TYPE_POSITION;
+  coap_pkt->type = (coap_message_type_t)((COAP_HEADER_TYPE_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TYPE_POSITION);
   coap_pkt->token_len = MIN(COAP_TOKEN_LEN, (COAP_HEADER_TOKEN_LEN_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TOKEN_LEN_POSITION);
   coap_pkt->code = coap_pkt->buffer[1];
   coap_pkt->mid = coap_pkt->buffer[2]<<8 | coap_pkt->buffer[3];
@@ -717,7 +717,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     switch (option_number)
     {
       case COAP_OPTION_CONTENT_TYPE:
-        coap_pkt->content_type = coap_parse_int_option(current_option, option_length);
+        coap_pkt->content_type = (coap_content_type_t)coap_parse_int_option(current_option, option_length);
         PRINTF("Content-Format [%u]\n", coap_pkt->content_type);
         break;
       case COAP_OPTION_MAX_AGE:
@@ -863,7 +863,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         coap_pkt->block2_num = coap_parse_int_option(current_option, option_length);
         coap_pkt->block2_more = (coap_pkt->block2_num & 0x08)>>3;
         coap_pkt->block2_size = 16 << (coap_pkt->block2_num & 0x07);
-        coap_pkt->block2_offset = (coap_pkt->block2_num & ~0x0000000F)<<(coap_pkt->block2_num & 0x07);
+        coap_pkt->block2_offset = (coap_pkt->block2_num & ~0x0000000Fu)<<(coap_pkt->block2_num & 0x07);
         coap_pkt->block2_num >>= 4;
         PRINTF("Block2 [%lu%s (%u B/blk)]\n", coap_pkt->block2_num, coap_pkt->block2_more ? "+" : "", coap_pkt->block2_size);
         break;
@@ -871,7 +871,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         coap_pkt->block1_num = coap_parse_int_option(current_option, option_length);
         coap_pkt->block1_more = (coap_pkt->block1_num & 0x08)>>3;
         coap_pkt->block1_size = 16 << (coap_pkt->block1_num & 0x07);
-        coap_pkt->block1_offset = (coap_pkt->block1_num & ~0x0000000F)<<(coap_pkt->block1_num & 0x07);
+        coap_pkt->block1_offset = (coap_pkt->block1_num & ~0x0000000Fu)<<(coap_pkt->block1_num & 0x07);
         coap_pkt->block1_num >>= 4;
         PRINTF("Block1 [%lu%s (%u B/blk)]\n", coap_pkt->block1_num, coap_pkt->block1_more ? "+" : "", coap_pkt->block1_size);
         break;
@@ -950,7 +950,7 @@ coap_get_header_content_type(void *packet)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
-  if (!IS_OPTION(coap_pkt, COAP_OPTION_CONTENT_TYPE)) return -1;
+  if (!IS_OPTION(coap_pkt, COAP_OPTION_CONTENT_TYPE)) return (unsigned int)-1;
 
   return coap_pkt->content_type;
 }

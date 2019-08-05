@@ -294,7 +294,7 @@ int cbor_get_singular(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t *da
     return result;
 }
 
-int prv_put_value(uint8_t * buffer, int bufferLen, uint8_t mt, uint64_t val)
+static int prv_put_value(uint8_t * buffer, int bufferLen, uint8_t mt, uint64_t val)
 {
     int result = 0;
     uint8_t val8 = (uint8_t)val;
@@ -353,7 +353,7 @@ int prv_put_value(uint8_t * buffer, int bufferLen, uint8_t mt, uint64_t val)
     return result;
 }
 
-int prv_put_float(uint8_t *buffer, size_t bufferLen, double val)
+static int prv_put_float(uint8_t *buffer, size_t bufferLen, double val)
 {
     int result = 0;
     float fval = val;
@@ -557,8 +557,8 @@ int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t * da
         res = snprintf((char *)buffer + result + 1,
                        bufferLen - result - 1,
                        "%u:%u",
-                       dataP->value.asObjLink.objectId,
-                       dataP->value.asObjLink.objectInstanceId);
+                       (unsigned)dataP->value.asObjLink.objectId,
+                       (unsigned)dataP->value.asObjLink.objectInstanceId);
         if ((int)(bufferLen - result - 1) > res)
         {
             if (prv_put_value(buffer + result,

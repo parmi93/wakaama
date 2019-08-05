@@ -187,7 +187,7 @@ static void prv_deleteObservedList(lwm2m_context_t * contextP)
 }
 #endif
 
-void prv_deleteTransactionList(lwm2m_context_t * context)
+static void prv_deleteTransactionList(lwm2m_context_t * context)
 {
     while (NULL != context->transactionList)
     {

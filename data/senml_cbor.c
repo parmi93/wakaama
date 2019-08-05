@@ -503,7 +503,7 @@ static int prv_serializeBaseName(const uint8_t * baseUriStr,
     res = cbor_put_type_and_value(buffer + head,
                                   bufferLen - head,
                                   CBOR_TYPE_NEGATIVE_INTEGER,
-                                  SENML_CBOR_BASE_NAME_LABEL);
+                                  (uint64_t)SENML_CBOR_BASE_NAME_LABEL);
     if (res <= 0) return -1;
     head += res;
 
