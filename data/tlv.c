@@ -104,7 +104,7 @@ static size_t prv_encodeInt(int64_t data,
 static size_t prv_encodeUInt(uint64_t data,
                              uint8_t * data_buffer)
 {
-    size_t length = 0;
+    size_t length;
 
     if (data <= UINT8_MAX)
     {

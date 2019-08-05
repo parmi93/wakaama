@@ -99,8 +99,8 @@
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
-#define SET_OPTION(packet, opt) {if (opt <= sizeof((packet)->options) * OPTION_MAP_SIZE) {(packet)->options[opt / OPTION_MAP_SIZE] |= 1 << (opt % OPTION_MAP_SIZE);}}
-#define IS_OPTION(packet, opt) ((opt <= sizeof((packet)->options) * OPTION_MAP_SIZE)?(packet)->options[opt / OPTION_MAP_SIZE] & (1 << (opt % OPTION_MAP_SIZE)):0)
+#define SET_OPTION(packet, opt) {if (((size_t)opt) <= sizeof((packet)->options) * OPTION_MAP_SIZE) {(packet)->options[((size_t)opt) / OPTION_MAP_SIZE] |= 1 << (((size_t)opt) % OPTION_MAP_SIZE);}}
+#define IS_OPTION(packet, opt) ((((size_t)opt) <= sizeof((packet)->options) * OPTION_MAP_SIZE)?(packet)->options[((size_t)opt) / OPTION_MAP_SIZE] & (1 << (((size_t)opt) % OPTION_MAP_SIZE)):0)
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b)? (a) : (b))
