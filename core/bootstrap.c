@@ -159,12 +159,12 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
 
 static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
                                            lwm2m_uri_t * uriP,
-                                           lwm2m_server_t * serverP,
                                            uint8_t ** bufferP,
                                            size_t * lengthP)
 {
     size_t length;
     size_t res;
+    int res2;
     lwm2m_object_t * objectP;
     uint8_t buffer[REG_OBJECT_MIN_LEN + 5];
     lwm2m_list_t *instanceP;
@@ -308,13 +308,13 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
     (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
 #endif
 
-    res = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), QUERY_VERSION);
-    if (res < 0) goto error;
-    (*lengthP) += res;
+    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), QUERY_VERSION);
+    if (res2 < 0) goto error;
+    (*lengthP) += res2;
 
-    res = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), LWM2M_VERSION);
-    if (res < 0) goto error;
-    (*lengthP) += res;
+    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), LWM2M_VERSION);
+    if (res2 < 0) goto error;
+    (*lengthP) += res2;
 
     for (objectP = contextP->objectList; objectP; objectP = objectP->next)
     {
@@ -340,9 +340,9 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
                 if (length - (*lengthP) < 1) goto error;
                 (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
 
-                res = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_VERSION_STR);
-                if (res < 0) goto error;
-                (*lengthP) += res;
+                res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_VERSION_STR);
+                if (res2 < 0) goto error;
+                (*lengthP) += res2;
 
                 res = utils_uintToText(objectP->versionMajor, (*bufferP)+(*lengthP), length - (*lengthP));
                 if (res == 0) goto error;
@@ -358,11 +358,6 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
         }
         for (instanceP = objectP->instanceList; instanceP; instanceP = instanceP->next)
         {
-            lwm2m_uri_t uri;
-            int size;
-            lwm2m_data_t *dataP;
-            uint64_t val;
-
             if (length - (*lengthP) < 3) goto error;
             (*bufferP)[(*lengthP)++] = REG_DELIMITER;
             (*bufferP)[(*lengthP)++] = REG_URI_START;
@@ -412,9 +407,9 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
                     if (length - (*lengthP) < 1) goto error;
                     (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
 
-                    res = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_SSID_STR);
-                    if (res < 0) goto error;
-                    (*lengthP) += res;
+                    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_SSID_STR);
+                    if (res2 < 0) goto error;
+                    (*lengthP) += res2;
 
                     res = utils_uintToText(val, (*bufferP)+(*lengthP), length - (*lengthP));
                     if (res == 0) goto error;
@@ -424,9 +419,9 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
                     if (length - (*lengthP) < 1) goto error;
                     (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
 
-                    res = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_URI_STR);
-                    if (res < 0) goto error;
-                    (*lengthP) += res;
+                    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_URI_STR);
+                    if (res2 < 0) goto error;
+                    (*lengthP) += res2;
 
                     uri.resourceId = LWM2M_SECURITY_URI_ID;
                     if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) goto error;
@@ -464,9 +459,9 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
                 if (length - (*lengthP) < 1) goto error;
                 (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
 
-                res = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_SSID_STR);
-                if (res < 0) goto error;
-                (*lengthP) += res;
+                res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_SSID_STR);
+                if (res2 < 0) goto error;
+                (*lengthP) += res2;
 
                 res = utils_uintToText(val, (*bufferP)+(*lengthP), length - (*lengthP));
                 if (res == 0) goto error;
@@ -888,7 +883,6 @@ uint8_t bootstrap_handleCommand(lwm2m_context_t * contextP,
                 format = LWM2M_CONTENT_LINK;
                 result = prv_handleBootstrapDiscover(contextP,
                                                      uriP,
-                                                     serverP,
                                                      &buffer,
                                                      &length);
             }
