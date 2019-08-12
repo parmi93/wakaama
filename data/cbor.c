@@ -144,7 +144,7 @@ int cbor_get_type_and_value(const uint8_t * buffer,
             break;
         case CBOR_AI_TWO_BYTE_VALUE:
             {
-                uint16_t half = val;
+                uint16_t half = (uint16_t)val;
                 int exp = (half >> 10) & 0x1f;
                 int mant = half & 0x3ff;
                 if (exp == 0)
@@ -173,7 +173,7 @@ int cbor_get_type_and_value(const uint8_t * buffer,
             break;
         case CBOR_AI_FOUR_BYTE_VALUE:
             {
-                int32_t val32 = val;
+                int32_t val32 = (int32_t)val;
                 dval = *(float*)&val32;
             }
             *type = CBOR_TYPE_FLOAT;
@@ -256,7 +256,7 @@ int cbor_get_singular(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t *da
         case CBOR_TYPE_BYTE_STRING:
             if (val > bufferLen - result) return -1;
             dataP->type = LWM2M_TYPE_OPAQUE;
-            dataP->value.asBuffer.length = val;
+            dataP->value.asBuffer.length = (size_t)val;
             if (val > 0)
             {
                 dataP->value.asBuffer.buffer = (uint8_t *)buffer + result;
@@ -265,12 +265,12 @@ int cbor_get_singular(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t *da
             {
                 dataP->value.asBuffer.buffer = NULL;
             }
-            result += val;
+            result += (int)val;
             break;
         case CBOR_TYPE_TEXT_STRING:
             if (val > bufferLen - result) return -1;
             dataP->type = LWM2M_TYPE_STRING;
-            dataP->value.asBuffer.length = val;
+            dataP->value.asBuffer.length = (size_t)val;
             if (val > 0)
             {
                 dataP->value.asBuffer.buffer = (uint8_t *)buffer + result;
@@ -279,7 +279,7 @@ int cbor_get_singular(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t *da
             {
                 dataP->value.asBuffer.buffer = NULL;
             }
-            result += val;
+            result += (int)val;
             break;
         case CBOR_TYPE_ARRAY:
         case CBOR_TYPE_MAP:
@@ -356,7 +356,7 @@ static int prv_put_value(uint8_t * buffer, int bufferLen, uint8_t mt, uint64_t v
 static int prv_put_float(uint8_t *buffer, size_t bufferLen, double val)
 {
     int result = 0;
-    float fval = val;
+    float fval = (float)val;
 
     if (bufferLen < 3) return 0;
 

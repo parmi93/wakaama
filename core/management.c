@@ -1118,7 +1118,7 @@ int lwm2m_dm_read_composite(lwm2m_context_t * contextP,
 
         // Replace undefined types with good types for objects and instances.
         // Serialization may not be correct without them.
-        for (i = 0; i < size; i++)
+        for (i = 0; i < (size_t)size; i++)
         {
             if (dataP[i].type == LWM2M_TYPE_UNDEFINED
              && dataP[i].id != LWM2M_MAX_ID)

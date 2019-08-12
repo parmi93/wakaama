@@ -364,7 +364,7 @@ static int prv_parseItem(const uint8_t * buffer,
                     recordP->value.value.asInteger += baseValue->value.asUnsigned;
                     break;
                 case LWM2M_TYPE_FLOAT:
-                    recordP->value.value.asInteger += baseValue->value.asFloat;
+                    recordP->value.value.asInteger += (int64_t)baseValue->value.asFloat;
                     break;
                 default:
                     return -1;
@@ -380,7 +380,7 @@ static int prv_parseItem(const uint8_t * buffer,
                     recordP->value.value.asUnsigned += baseValue->value.asUnsigned;
                     break;
                 case LWM2M_TYPE_FLOAT:
-                    recordP->value.value.asUnsigned += baseValue->value.asFloat;
+                    recordP->value.value.asUnsigned += (uint64_t)baseValue->value.asFloat;
                     break;
                 default:
                     return -1;

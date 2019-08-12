@@ -223,12 +223,12 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
             time_t tv_sec = lwm2m_gettime();
 
             // initialize first 6 bytes, leave the last 2 random
-            temp_token[0] = mID;
+            temp_token[0] = (uint8_t)mID;
             temp_token[1] = mID >> 8;
-            temp_token[2] = tv_sec;
-            temp_token[3] = tv_sec >> 8;
-            temp_token[4] = tv_sec >> 16;
-            temp_token[5] = tv_sec >> 24;
+            temp_token[2] = (uint8_t)tv_sec;
+            temp_token[3] = (uint8_t)(tv_sec >> 8);
+            temp_token[4] = (uint8_t)(tv_sec >> 16);
+            temp_token[5] = (uint8_t)(tv_sec >> 24);
             // use just the provided amount of bytes
             coap_set_header_token(transacP->message, temp_token, token_len);
         }
@@ -353,7 +353,7 @@ int transaction_send(lwm2m_context_t * contextP,
     LOG_ARG("Entering: transaction=%p", transacP);
     if (transacP->buffer == NULL)
     {
-        transacP->buffer_len = coap_serialize_get_size(transacP->message);
+        transacP->buffer_len = (uint16_t)coap_serialize_get_size(transacP->message);
         if (transacP->buffer_len == 0)
         {
            transaction_remove(contextP, transacP);
@@ -367,7 +367,7 @@ int transaction_send(lwm2m_context_t * contextP,
            return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        transacP->buffer_len = coap_serialize_message(transacP->message, transacP->buffer);
+        transacP->buffer_len = (uint16_t)coap_serialize_message(transacP->message, transacP->buffer);
         if (transacP->buffer_len == 0)
         {
             lwm2m_free(transacP->buffer);

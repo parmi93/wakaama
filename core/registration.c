@@ -1561,7 +1561,7 @@ static int prv_getId(uint8_t * data,
                         return 0;
                     }
                     if(val > UINT8_MAX) return 0;
-                    *versionMajor = val;
+                    *versionMajor = (uint8_t)val;
                     if (utils_textToUInt(data + limit2 + 1,
                                          limit - limit2 - 1,
                                          &val) == 0)
@@ -1574,7 +1574,7 @@ static int prv_getId(uint8_t * data,
                         *versionMajor = 0;
                         return 0;
                     }
-                    *versionMinor = val;
+                    *versionMinor = (uint8_t)val;
                     limit += extra;
                 }
                 // Ignore any unrecognized attribute

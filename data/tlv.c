@@ -73,13 +73,13 @@ static size_t prv_encodeInt(int64_t data,
     if (data >= INT8_MIN && data <= INT8_MAX)
     {
         length = 1;
-        data_buffer[0] = data;
+        data_buffer[0] = (uint8_t)data;
     }
     else if (data >= INT16_MIN && data <= INT16_MAX)
     {
         int16_t value;
 
-        value = data;
+        value = (int16_t)data;
         length = 2;
         data_buffer[0] = (value >> 8) & 0xFF;
         data_buffer[1] = value & 0xFF;
@@ -88,7 +88,7 @@ static size_t prv_encodeInt(int64_t data,
     {
         int32_t value;
 
-        value = data;
+        value = (int32_t)data;
         length = 4;
         utils_copyValue(data_buffer, &value, length);
     }
@@ -109,13 +109,13 @@ static size_t prv_encodeUInt(uint64_t data,
     if (data <= UINT8_MAX)
     {
         length = 1;
-        data_buffer[0] = data;
+        data_buffer[0] = (uint8_t)data;
     }
     else if (data <= UINT16_MAX)
     {
         uint16_t value;
 
-        value = data;
+        value = (uint16_t)data;
         length = 2;
         data_buffer[0] = (value >> 8) & 0xFF;
         data_buffer[1] = value & 0xFF;
@@ -124,7 +124,7 @@ static size_t prv_encodeUInt(uint64_t data,
     {
         uint32_t value;
 
-        value = data;
+        value = (uint32_t)data;
         length = 4;
         utils_copyValue(data_buffer, &value, length);
     }
@@ -249,17 +249,17 @@ static int prv_createHeader(uint8_t * header,
     }
     else
     {
-        header[1] = id;
+        header[1] = (uint8_t)id;
         offset = 2;
     }
     if (data_len <= 7)
     {
-        header[0] += data_len;
+        header[0] += (uint8_t)data_len;
     }
     else if (data_len <= 0xFF)
     {
         header[0] |= 0x08;
-        header[offset] = data_len;
+        header[offset] = (uint8_t)data_len;
     }
     else if (data_len <= 0xFFFF)
     {
