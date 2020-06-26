@@ -223,6 +223,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                                                      message->accept,
                                                      size,
                                                      dataP,
+                                                     LWM2M_URI_IS_SET_RESOURCE(uriP),
                                                      &format);
                     if (COAP_205_CONTENT == result)
                     {
