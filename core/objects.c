@@ -1674,6 +1674,7 @@ uint8_t object_readComposite(lwm2m_context_t * contextP,
                                              accept,
                                              size,
                                              dataP,
+                                             false,
                                              outFormatP);
         }
         else
