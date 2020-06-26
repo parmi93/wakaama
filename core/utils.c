@@ -893,7 +893,14 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
     }
     else if (singular)
     {
-        *format = LWM2M_CONTENT_TEXT;
+        if(LWM2M_TYPE_OPAQUE == dataP->type)
+        {
+           *format = LWM2M_CONTENT_OPAQUE;
+        }
+        else
+        {
+           *format = LWM2M_CONTENT_TEXT;
+        }
     }
     else
     {
