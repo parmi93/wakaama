@@ -400,6 +400,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
                                 const uint16_t *accept,
                                 int numData,
                                 const lwm2m_data_t *dataP,
+                                bool singleResource,
                                 lwm2m_media_type_t *format);
 int utils_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);

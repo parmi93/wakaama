@@ -782,6 +782,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
                                 const uint16_t *accept,
                                 int numData,
                                 const lwm2m_data_t *dataP,
+                                bool singleResource,
                                 lwm2m_media_type_t *format)
 {
     uint8_t result = COAP_205_CONTENT;
@@ -797,13 +798,13 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
             singular = false;
             break;
         default:
-            singular = true;
+            singular = singleResource;
             break;
         }
     }
     else
     {
-        singular = false;
+        singular = singleResource;
     }
 
     *format = LWM2M_CONTENT_TEXT;
@@ -877,7 +878,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 #elif defined(LWM2M_SUPPORT_TLV)
         *format = LWM2M_CONTENT_TLV;
 #else
-        *format = LWM2M_CONTENT_TEXT;
+        result = COAP_500_INTERNAL_SERVER_ERROR;
 #endif
     }
 

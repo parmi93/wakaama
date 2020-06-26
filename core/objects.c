@@ -238,6 +238,7 @@ uint8_t object_read(lwm2m_context_t * contextP,
                                              accept,
                                              size,
                                              dataP,
+                                             LWM2M_URI_IS_SET_RESOURCE(uriP),
                                              formatP);
         }
         if (result == COAP_205_CONTENT)
