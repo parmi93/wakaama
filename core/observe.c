@@ -862,9 +862,7 @@ int lwm2m_send(lwm2m_context_t * contextP,
     lwm2m_uri_t uri;
     int ret;
     int size = 0;
-    uint8_t * buffer;
-    uint8_t * originalBuffer;
-    bool freeOriginal = true;
+    uint8_t * buffer = NULL;
     int length;
     size_t i;
     bool oneGood = false;
@@ -914,7 +912,6 @@ int lwm2m_send(lwm2m_context_t * contextP,
     }
 
     ret = COAP_404_NOT_FOUND;
-    originalBuffer = buffer;
     for (targetP = contextP->serverList; targetP != NULL; targetP = targetP->next)
     {
         bool mute = true;
@@ -949,22 +946,6 @@ int lwm2m_send(lwm2m_context_t * contextP,
             break;
         }
 
-        // Duplicate the buffer if going to more than 1 server
-        if (shortServerID == 0)
-        {
-            buffer = lwm2m_malloc(length);
-            if (buffer != NULL)
-            {
-                memcpy(buffer, originalBuffer, length);
-            }
-            else
-            {
-                ret = COAP_500_INTERNAL_SERVER_ERROR;
-                // Going to the next server won't fix this, just get out.
-                break;
-            }
-        }
-
         LWM2M_URI_RESET(&uri);
         transactionP = transaction_new(targetP->sessionH, COAP_POST, NULL, &uri, contextP->nextMID++, 0, NULL);
         if (transactionP == NULL)
@@ -978,8 +959,6 @@ int lwm2m_send(lwm2m_context_t * contextP,
         coap_set_header_uri_path(transactionP->message, "/"URI_SEND_SEGMENT);
         coap_set_header_content_type(transactionP->message, format);
         coap_set_payload(transactionP->message, buffer, length);
-        // lwm2m_handle_packet will free buffer
-        if (shortServerID != 0) freeOriginal = false;
 
         transactionP->callback = callback;
         transactionP->userData = userData;
@@ -997,9 +976,10 @@ int lwm2m_send(lwm2m_context_t * contextP,
         }
         if (shortServerID != 0) break;
     }
-    if (freeOriginal)
+    if (buffer)
     {
-        lwm2m_free(originalBuffer);
+        lwm2m_free(buffer);
+        coap_set_payload(transactionP->message, NULL, 0);
     }
     if (oneGood) ret = NO_ERROR;
     return ret;
